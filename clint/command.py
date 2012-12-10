@@ -29,12 +29,14 @@ def run_command(name, command_cls, *args, **kwargs):
         command = None
         message = None
         status = 0
+        exception = None
 
         try:
             command = command_cls(*args, **kwargs)
 
             sys.exit(command.run() or 0)
         except CommandError, exc:
+            exception = exc
             message = exc[0]
             status = exc[1]
 
@@ -45,6 +47,9 @@ def run_command(name, command_cls, *args, **kwargs):
         finally:
             if command:
                 command.quit()
+
+        if command and status != 0:
+            command.exiting_on_error(exception, status)
 
         sys.exit(status)
 
@@ -65,6 +70,15 @@ class Command(object):
     @property
     def args(self):
         return self.arguments
+
+    def exiting_on_error(self, exception, status):
+        """
+        Called by run_command when exiting script with non-zero status.
+
+        If the run_command() function catches an exception and the script is
+        about to exit with a non-zero status, this function will be called to
+        allow the script to handle the exception.
+        """
 
     def _fill_parser(self):
         p = self.parser
