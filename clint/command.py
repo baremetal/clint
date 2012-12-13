@@ -58,7 +58,11 @@ class Command(object):
     CommandError = CommandError
 
     def __init__(self, doc=None):
-        self.parser = ArgumentParser(description=re.sub(USAGE_REGEX, r'\1', doc or self.__class__.__doc__))
+        try:
+            self.parser = ArgumentParser(description=re.sub(USAGE_REGEX, r'\1', doc or self.__class__.__doc__))
+        except TypeError:
+            raise CommandError('Unable to create ArgumentParser, perhaps your command class needs a docstring?')
+
         self._fill_parser()
 
         self.arguments, self.remaining_args = self.parser.parse_known_args()
